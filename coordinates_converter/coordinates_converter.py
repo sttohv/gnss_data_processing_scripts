@@ -2,6 +2,7 @@ import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from datetime import timedelta
 from pandas import read_csv
 from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 
@@ -9,11 +10,28 @@ converter = CoordinateConverter()
 
 # Read the files in (needs to be changed according to file)
 # If sth is broken then the delimiter is the most likely answer (save .csv file in Excel and then it works)
+# This function also removes first 15 min of data from all files (since it is gathered for initial positioning)
 def read_data_files():
-    raw_rover = read_csv("input/Standardhälve arvutamine - [Staadion] Toorandmed.csv", delimiter=";")
-    processed_rover = read_csv("input/Standardhälve arvutamine - [Staadion] Järeltööötlus.csv", delimiter=";")
-    ground_truth = read_csv("input/Standardhälve arvutamine - [Staadion] Tõeandmed.csv", delimiter=";")
+    raw_rover = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Toorandmed.csv", delimiter=",")
+    processed_rover = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Järeltööötlus.csv", delimiter=",")
+    ground_truth = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Tõeandmed.csv", delimiter=",")
+
+    # Convert 'time' column to pandas.Timestamp
+    raw_rover['time'] = pd.to_datetime(raw_rover['time'], format='%H:%M:%S')
+    processed_rover['time'] = pd.to_datetime(processed_rover['time'], format='%H:%M:%S')
+    ground_truth['time'] = pd.to_datetime(ground_truth['time'], format='%H:%M:%S')
+
+    # Remove first 15 minutes of data
+    min_time_raw = raw_rover['time'].min() + timedelta(minutes=15)
+    min_time_processed = processed_rover['time'].min() + timedelta(minutes=15)
+    min_time_ground_truth = ground_truth['time'].min() + timedelta(minutes=15)
+
+    raw_rover = raw_rover[raw_rover['time'] >= min_time_raw]
+    processed_rover = processed_rover[processed_rover['time'] >= min_time_processed]
+    ground_truth = ground_truth[ground_truth['time'] >= min_time_ground_truth]
+
     return raw_rover, processed_rover, ground_truth
+
 
 # Merging dataframes
 def merge_dataframes(raw_rover, processed_rover, ground_truth):
@@ -95,8 +113,8 @@ def main():
     print(processed_standard_deviation, " Järeltöötlus andmete ja tõeandmete standardhälve")
 
     plt.savefig('test_plot.svg', format='svg')
-    plt.xlim(0, 60)
-    plt.ylim(0, 60)
+    # plt.xlim(0, 60)
+    # plt.ylim(0, 60)
     plt.show()
 
 if __name__ == "__main__":
