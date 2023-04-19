@@ -1,25 +1,28 @@
 import csv
 
-filename = "Staadion_18.04_xiaomi"
-FILE_TYPE = "Fix-GPS"
-location = "Staadion"
+input_filename = "Staadion_18.04_xiaomi"
+provider = "GPS"
 date = "18_04_2023"
+location = "Staadion"
 
-with open(f"output/[{FILE_TYPE}][{date}][{location}].csv", 'w', newline='') as f:
+# Don't edit next one
+data_type = "Fix"
+
+with open(f"output/[{data_type}{provider}][{date}][{location}].csv", 'w', newline='') as f:
     writer = csv.writer(f)
 
-    header = ["Fix","Provider","LatitudeDegrees","LongitudeDegrees","UnixTimeMillis"]
+    header = ["Fix", "Provider", "LatitudeDegrees", "LongitudeDegrees", "UnixTimeMillis"]
     writer.writerow(header)
 
-    stream = open(fr'input/{filename}.txt', 'r')
+    stream = open(fr'input/{input_filename}.txt', 'r')
     for line in stream:
         lineList = line.split(",")
-        dataType = lineList[0]
-        if(dataType == "Fix"):
-            provider = lineList[1]
-            if(provider == "GPS"):
+        line_data_type = lineList[0]
+        if line_data_type == data_type:
+            line_provider = lineList[1]
+            if line_provider == provider:
                 latitude = lineList[2]
                 longitude = lineList[3]
                 time = lineList[8]
-                row = [dataType, provider,latitude, longitude, time]
+                row = [line_data_type, line_provider, latitude, longitude, time]
                 writer.writerow(row)
