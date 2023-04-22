@@ -7,7 +7,7 @@ locations = ["Staadion", "Tudengimaja"]
 devices = ["Pixel", "Xiaomi"]
 
 date = "22_04"
-device = devices[1]
+device = devices[0]
 location = locations[1]
 
 
@@ -22,7 +22,7 @@ def convertTime():
     with open(f"{output_directory}/{output_filename}", 'w', newline='') as f:
         writer = csv.writer(f)
 
-        header = ["Time", "Latitude", "Longitude"]
+        header = ["time", "latitude", "longitude"]
         writer.writerow(header)
 
         stream = open(fr'input/{input_filename}.pos', 'r')

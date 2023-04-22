@@ -9,15 +9,14 @@ from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 converter = CoordinateConverter()
 
 # Read the files in (needs to be changed according to file)
-
 def read_data_files(input_folder="input"):
     input_path = Path(input_folder)
 
     file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".csv"]
 
     raw_rover_data_file = [file_name for file_name in file_names if "Fix" in file_name][0]
-    processed_rover_data_file = [file_name for file_name in file_names if "Järeltöötlus" in file_name][0]
-    ground_truth_data_file = [file_name for file_name in file_names if "Tõeandmed" in file_name][0]
+    processed_rover_data_file = [file_name for file_name in file_names if "pos" in file_name][0]
+    ground_truth_data_file = [file_name for file_name in file_names if "Referentsandmed" in file_name][0]
 
     raw_rover_file = input_path / raw_rover_data_file
     processed_rover_file = input_path / processed_rover_data_file
@@ -60,10 +59,10 @@ def draw_coordinates_and_their_connection(row, line_color, truth_color, rover_co
     deviation += calculate_euclidean_distance(rover_coord_lest97, ground_truth_coord_lest97)
 
     # Plotting
-    plt.plot([rover_coord_lest97.x - min_x, ground_truth_coord_lest97.x - min_x],
-             [rover_coord_lest97.y - min_y, ground_truth_coord_lest97.y - min_y], line_color, markersize=1)
-    plt.plot([ground_truth_coord_lest97.x - min_x], [ground_truth_coord_lest97.y - min_y], truth_color, markersize=1.2)
-    plt.plot([rover_coord_lest97.x - min_x], [rover_coord_lest97.y - min_y], rover_color, markersize=1.2)
+    # plt.plot([rover_coord_lest97.x - min_x, ground_truth_coord_lest97.x - min_x],
+    #          [rover_coord_lest97.y - min_y, ground_truth_coord_lest97.y - min_y], line_color, markersize=1)
+    # plt.plot([ground_truth_coord_lest97.x - min_x], [ground_truth_coord_lest97.y - min_y], truth_color, markersize=1.2)
+    # plt.plot([rover_coord_lest97.x - min_x], [rover_coord_lest97.y - min_y], rover_color, markersize=1.2)
 
     return deviation
 
@@ -111,17 +110,17 @@ def main():
 
     plt.figure(dpi=400)
 
-    min_x, min_y = find_min_lest97_coordinates(raw_merged)
-
     raw_distances = []
     processed_distances = []
 
     for index, row in processed_merged.iterrows():
+        min_x, min_y = find_min_lest97_coordinates(processed_merged)
         processed_deviation = draw_coordinates_and_their_connection(row, 'go-', 'bo', 'ro',
                                                                     0, min_x, min_y)
         processed_distances.append(processed_deviation)
 
     for index, row in raw_merged.iterrows():
+        min_x, min_y = find_min_lest97_coordinates(raw_merged)
         raw_deviation = draw_coordinates_and_their_connection(row, 'ro-', 'bo', 'go',
                                                               0, min_x, min_y)
         raw_distances.append(raw_deviation)
@@ -129,14 +128,14 @@ def main():
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)
 
-    print(raw_mean_deviation, " Toorandmete ja tõeandmete keskmine viga")
-    print(processed_mean_deviation, " Järeltöötlus andmete ja tõeandmete keskmine viga")
+    print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
+    print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")
 
     raw_standard_deviation = calculate_standard_deviation(raw_distances)
     processed_standard_deviation = calculate_standard_deviation(processed_distances)
 
-    print(raw_standard_deviation, " Toorandmete ja tõeandmete standardhälve")
-    print(processed_standard_deviation, " Järeltöötlus andmete ja tõeandmete standardhälve")
+    print(raw_standard_deviation, " Toorandmete ja referentsandmete standardhälve")
+    print(processed_standard_deviation, " Järeltöötlus andmete ja referentsandmete standardhälve")
 
     plt.savefig('test_plot.svg', format='svg')
     # plt.xlim(0, 60)

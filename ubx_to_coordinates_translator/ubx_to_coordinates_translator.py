@@ -1,21 +1,29 @@
 import csv
+import os
 from pyubx2 import UBXReader
 from pynmeagps import NMEAMessage
 
 locations = ["Staadion", "Tudengimaja"]
 
-FILE_TYPE = "Referentsandmed"
+file_type = "Referentsandmed"
 location = locations[1]
 date = "22_04"
 
-with open(f"output/{FILE_TYPE}_{date}_{location}.csv", 'w', newline='') as f:
+input_filename = f"{file_type}_{date}_{location}"
+
+output_filename = f"{file_type}_{date}_{location}.csv"
+output_directory = f"output/{date}/"
+
+os.makedirs(os.path.dirname(f"{output_directory}/{output_filename}"), exist_ok=True)
+
+with open(f"{output_directory}/{output_filename}", 'w', newline='') as f:
     writer = csv.writer(f)
 
     header = ["time", "latitude", "longitude"]
     writer.writerow(header)
 
     # Change file name if needed
-    stream = open(f'input/{FILE_TYPE}_{date}_{location}.ubx', 'rb')
+    stream = open(fr'input/{input_filename}.ubx', 'rb')
     ubr = UBXReader(stream)
 
     for (raw_data, parsed_data) in ubr:
