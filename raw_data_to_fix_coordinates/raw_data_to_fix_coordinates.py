@@ -1,17 +1,21 @@
 import csv
-
+import os
 
 provider = "GPS"
 date = "22_04"
 location = "tudengimaja"
-device = "Xiaomi"
+device = "Pixel"
+
+data_type = "Fix"
 
 input_filename = f"{date}/{device}_{date}_{location}"
 
-# Don't edit next one
-data_type = "Fix"
+output_directory = f"output/{date}/"
+output_filename = f"{device}_{data_type}{provider}_{date}_{location}.csv"
 
-with open(f"output/{date}/{device}_{data_type}{provider}_{date}_{location}.csv", 'w', newline='') as f:
+os.makedirs(os.path.dirname(f"{output_directory}/{output_filename}"), exist_ok=True)
+
+with open(f"{output_directory}/{output_filename}", 'w', newline='') as f:
     writer = csv.writer(f)
 
     header = ["Fix", "Provider", "LatitudeDegrees", "LongitudeDegrees", "UnixTimeMillis"]
