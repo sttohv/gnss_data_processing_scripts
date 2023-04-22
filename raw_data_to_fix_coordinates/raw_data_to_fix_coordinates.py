@@ -1,14 +1,17 @@
 import csv
 
-input_filename = "Staadion_18.04_xiaomi"
+
 provider = "GPS"
-date = "18_04_2023"
-location = "Staadion"
+date = "22_04"
+location = "tudengimaja"
+device = "Xiaomi"
+
+input_filename = f"{date}/{device}_{date}_{location}"
 
 # Don't edit next one
 data_type = "Fix"
 
-with open(f"output/[{data_type}{provider}][{date}][{location}].csv", 'w', newline='') as f:
+with open(f"output/{date}/{device}_{data_type}{provider}_{date}_{location}.csv", 'w', newline='') as f:
     writer = csv.writer(f)
 
     header = ["Fix", "Provider", "LatitudeDegrees", "LongitudeDegrees", "UnixTimeMillis"]
