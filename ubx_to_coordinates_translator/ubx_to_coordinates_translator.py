@@ -2,19 +2,20 @@ import csv
 from pyubx2 import UBXReader
 from pynmeagps import NMEAMessage
 
+locations = ["Staadion", "Tudengimaja"]
 
-FILE_TYPE = "UUS_Tõeandmed"
-location = "Tudengimaja"
-date = "18.04.2023"
+FILE_TYPE = "Referentsandmed"
+location = locations[1]
+date = "22_04"
 
-with open(f"output/[{FILE_TYPE}][{date}][{location}].csv", 'w', newline='') as f:
+with open(f"output/{FILE_TYPE}_{date}_{location}.csv", 'w', newline='') as f:
     writer = csv.writer(f)
 
     header = ["time", "latitude", "longitude"]
     writer.writerow(header)
 
     # Change file name if needed
-    stream = open(r'input/UUS_Tõeandmed_18.04_Tudengimaja.ubx', 'rb')
+    stream = open(f'input/{FILE_TYPE}_{date}_{location}.ubx', 'rb')
     ubr = UBXReader(stream)
 
     for (raw_data, parsed_data) in ubr:
@@ -24,5 +25,3 @@ with open(f"output/[{FILE_TYPE}][{date}][{location}].csv", 'w', newline='') as f
                 writer.writerow(row)
 
 # Kas siit saab kätte, mis tüüpi FIXiga on tegu?
-
-

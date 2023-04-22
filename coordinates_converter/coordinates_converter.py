@@ -2,36 +2,43 @@ import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import timedelta
+from pathlib import Path
 from pandas import read_csv
 from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 
 converter = CoordinateConverter()
 
 # Read the files in (needs to be changed according to file)
-# If sth is broken then the delimiter is the most likely answer (save .csv file in Excel and then it works)
-# This function also removes first 15 min of data from all files (since it is gathered for initial positioning)
-def read_data_files():
-    raw_rover = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Toorandmed.csv", delimiter=",")
-    processed_rover = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Järeltööötlus.csv", delimiter=",")
-    ground_truth = read_csv("input/[Pixel][UUS] Standardhälve arvutamine - [Staadion] Tõeandmed.csv", delimiter=",")
+
+def read_data_files(input_folder="input"):
+    input_path = Path(input_folder)
+
+    file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".csv"]
+
+    raw_rover_data_file = [file_name for file_name in file_names if "Fix" in file_name][0]
+    processed_rover_data_file = [file_name for file_name in file_names if "Järeltöötlus" in file_name][0]
+    ground_truth_data_file = [file_name for file_name in file_names if "Tõeandmed" in file_name][0]
+
+    raw_rover_file = input_path / raw_rover_data_file
+    processed_rover_file = input_path / processed_rover_data_file
+    ground_truth_file = input_path / ground_truth_data_file
+
+    # Change delimiter if necessary (Excel and Google sheets have different values ; and , accordingly)
+    raw_rover = read_csv(raw_rover_file, delimiter=",")
+    processed_rover = read_csv(processed_rover_file, delimiter=",")
+    ground_truth = read_csv(ground_truth_file, delimiter=",")
 
     # Convert 'time' column to pandas.Timestamp
-    raw_rover['time'] = pd.to_datetime(raw_rover['time'], format='%H:%M:%S')
-    processed_rover['time'] = pd.to_datetime(processed_rover['time'], format='%H:%M:%S')
-    ground_truth['time'] = pd.to_datetime(ground_truth['time'], format='%H:%M:%S')
-
-    # Remove first 15 minutes of data
-    min_time_raw = raw_rover['time'].min() + timedelta(minutes=15)
-    min_time_processed = processed_rover['time'].min() + timedelta(minutes=15)
-    min_time_ground_truth = ground_truth['time'].min() + timedelta(minutes=15)
-
-    raw_rover = raw_rover[raw_rover['time'] >= min_time_raw]
-    processed_rover = processed_rover[processed_rover['time'] >= min_time_processed]
-    ground_truth = ground_truth[ground_truth['time'] >= min_time_ground_truth]
+    raw_rover = convert_time_column(raw_rover)
+    processed_rover = convert_time_column(processed_rover)
+    ground_truth = convert_time_column(ground_truth)
 
     return raw_rover, processed_rover, ground_truth
 
+
+def convert_time_column(dataframe, time_format="%H:%M:%S"):
+    dataframe['time'] = pd.to_datetime(dataframe['time'], format=time_format)
+    return dataframe
 
 # Merging dataframes
 def merge_dataframes(raw_rover, processed_rover, ground_truth):
@@ -39,18 +46,6 @@ def merge_dataframes(raw_rover, processed_rover, ground_truth):
     raw_merged = pd.merge(raw_rover, ground_truth, on="time")
     return processed_merged, raw_merged
 
-def calculate_euclidean_distance(coord1: L_Est97, coord2: L_Est97):
-    return math.sqrt((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2)
-
-def wgs84_to_lest97_coordinates(latitudes, longitudes):
-    coordinates_wgs84 = np.column_stack((latitudes, longitudes))
-    return [converter.wgs84_to_l_est97(WGS84(lat=lat, long=long)) for lat, long in coordinates_wgs84]
-
-def find_min_lest97_coordinates(dataframe):
-    latitudes = dataframe['latitude_x'].to_numpy()
-    longitudes = dataframe['longitude_x'].to_numpy()
-    coordinates_lest97 = wgs84_to_lest97_coordinates(latitudes, longitudes)
-    return min(coord.x for coord in coordinates_lest97) - 10, min(coord.y for coord in coordinates_lest97) - 10
 
 def draw_coordinates_and_their_connection(row, line_color, truth_color, rover_color, deviation, min_x, min_y):
     # Converting rover coordinates to LEST97
@@ -72,6 +67,24 @@ def draw_coordinates_and_their_connection(row, line_color, truth_color, rover_co
 
     return deviation
 
+
+# ToDo Add constant for the -10 (ask Juhan for reference)
+def calculate_euclidean_distance(coord1: L_Est97, coord2: L_Est97):
+    return math.sqrt((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2)
+
+
+def wgs84_to_lest97_coordinates(latitudes, longitudes):
+    coordinates_wgs84 = np.column_stack((latitudes, longitudes))
+    return [converter.wgs84_to_l_est97(WGS84(lat=lat, long=long)) for lat, long in coordinates_wgs84]
+
+
+def find_min_lest97_coordinates(dataframe):
+    latitudes = dataframe['latitude_x'].to_numpy()
+    longitudes = dataframe['longitude_x'].to_numpy()
+    coordinates_lest97 = wgs84_to_lest97_coordinates(latitudes, longitudes)
+    return min(coord.x for coord in coordinates_lest97) - 10, min(coord.y for coord in coordinates_lest97) - 10
+
+
 def calculate_standard_deviation(distances):
     mean_distance = np.mean(distances)
     squared_diff = [(d - mean_distance) ** 2 for d in distances]
@@ -79,11 +92,24 @@ def calculate_standard_deviation(distances):
     standard_deviation = np.sqrt(variance)
     return standard_deviation
 
+
+# This function removes first 15 min of data from all files (since it is gathered for initial positioning)
+def filter_time_range(dataframe):
+    start_time = dataframe['time'].min() + pd.Timedelta(minutes=15)
+    end_time = dataframe['time'].max() - pd.Timedelta(seconds=15)
+    return dataframe[(dataframe['time'] >= start_time) & (dataframe['time'] <= end_time)]
+
+
 def main():
     raw_rover, processed_rover, ground_truth = read_data_files()
+
+    raw_rover = filter_time_range(raw_rover)
+    processed_rover = filter_time_range(processed_rover)
+    ground_truth = filter_time_range(ground_truth)
+
     processed_merged, raw_merged = merge_dataframes(raw_rover, processed_rover, ground_truth)
 
-    plt.figure(dpi=600)
+    plt.figure(dpi=400)
 
     min_x, min_y = find_min_lest97_coordinates(raw_merged)
 
@@ -92,12 +118,12 @@ def main():
 
     for index, row in processed_merged.iterrows():
         processed_deviation = draw_coordinates_and_their_connection(row, 'go-', 'bo', 'ro',
-                                                                     0, min_x, min_y)
+                                                                    0, min_x, min_y)
         processed_distances.append(processed_deviation)
 
     for index, row in raw_merged.iterrows():
         raw_deviation = draw_coordinates_and_their_connection(row, 'ro-', 'bo', 'go',
-                                                               0, min_x, min_y)
+                                                              0, min_x, min_y)
         raw_distances.append(raw_deviation)
 
     raw_mean_deviation = np.mean(raw_distances)
@@ -117,16 +143,6 @@ def main():
     # plt.ylim(0, 60)
     plt.show()
 
+
 if __name__ == "__main__":
     main()
-
-
-# ToDod
-# Toorandmete rea lisamine [DONE]
-# Saa väiksemaks see tradi roheline joon
-# Arvutaks toorandmete/järeltöötlusandmete ja tõeandmete vahelise standardhälve
-#
-# Lahutada kõikidest koordinaatidest maha esimene (või kõige väiksem) koordinaat [DONE]
-# Miinimum, maksimum väärtus [DONE]
-# Esimesed 15 minutit viska minema [DONE]
-# Teha vektor failiks [DONE]

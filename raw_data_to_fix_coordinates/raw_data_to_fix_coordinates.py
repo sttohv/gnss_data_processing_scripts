@@ -1,12 +1,16 @@
 import csv
 import os
 
-provider = "GPS"
-date = "22_04"
-location = "tudengimaja"
-device = "Pixel"
+# Constants (choose one that fits for you or make your own)
+locations = ["Staadion", "Tudengimaja"]
+devices = ["Pixel", "Xiaomi"]
 
+provider = "GPS"
+date = "21_04"
 data_type = "Fix"
+device = devices[1]
+location = locations[0]
+
 
 input_filename = f"{date}/{device}_{date}_{location}"
 
