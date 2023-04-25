@@ -1,4 +1,7 @@
+import csv
 import math
+import os
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,7 +12,18 @@ from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 converter = CoordinateConverter()
 
 # Read the files in (needs to be changed according to file)
-def read_data_files(input_folder="input"):
+def read_data_files(date, input_folder=None):
+
+    if input_folder is None:
+        # Get the current file location
+        current_script_path = os.path.realpath(__file__)
+
+        # Get the base directory
+        base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
+
+        # Set the default input folder
+        input_folder = os.path.join(base_directory, "output", date)
+
     input_path = Path(input_folder)
 
     file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".csv"]
@@ -59,10 +73,10 @@ def draw_coordinates_and_their_connection(row, line_color, truth_color, rover_co
     deviation += calculate_euclidean_distance(rover_coord_lest97, ground_truth_coord_lest97)
 
     # Plotting
-    # plt.plot([rover_coord_lest97.x - min_x, ground_truth_coord_lest97.x - min_x],
-    #          [rover_coord_lest97.y - min_y, ground_truth_coord_lest97.y - min_y], line_color, markersize=1)
-    # plt.plot([ground_truth_coord_lest97.x - min_x], [ground_truth_coord_lest97.y - min_y], truth_color, markersize=1.2)
-    # plt.plot([rover_coord_lest97.x - min_x], [rover_coord_lest97.y - min_y], rover_color, markersize=1.2)
+    plt.plot([rover_coord_lest97.x - min_x, ground_truth_coord_lest97.x - min_x],
+             [rover_coord_lest97.y - min_y, ground_truth_coord_lest97.y - min_y], line_color, markersize=1)
+    plt.plot([ground_truth_coord_lest97.x - min_x], [ground_truth_coord_lest97.y - min_y], truth_color, markersize=1.2)
+    plt.plot([rover_coord_lest97.x - min_x], [rover_coord_lest97.y - min_y], rover_color, markersize=1.2)
 
     return deviation
 
@@ -99,8 +113,10 @@ def filter_time_range(dataframe):
     return dataframe[(dataframe['time'] >= start_time) & (dataframe['time'] <= end_time)]
 
 
-def main():
-    raw_rover, processed_rover, ground_truth = read_data_files()
+
+
+def main(date="22_04"):
+    raw_rover, processed_rover, ground_truth = read_data_files(date)
 
     raw_rover = filter_time_range(raw_rover)
     processed_rover = filter_time_range(processed_rover)
@@ -137,10 +153,15 @@ def main():
     print(raw_standard_deviation, " Toorandmete ja referentsandmete standardhälve")
     print(processed_standard_deviation, " Järeltöötlus andmete ja referentsandmete standardhälve")
 
-    plt.savefig('test_plot.svg', format='svg')
+    subtraction_of_raw_and_processed_mean_deviation = abs(raw_mean_deviation - processed_mean_deviation)
+    subtraction_of_raw_and_processed_standard_deviation = abs(raw_standard_deviation - processed_standard_deviation)
+
+    # plt.savefig('test_plot.svg', format='svg')
     # plt.xlim(0, 60)
     # plt.ylim(0, 60)
-    plt.show()
+    # plt.show()
+
+    return raw_mean_deviation, processed_mean_deviation, raw_standard_deviation, processed_standard_deviation, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_deviation
 
 
 if __name__ == "__main__":
