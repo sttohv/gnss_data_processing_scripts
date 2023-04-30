@@ -42,7 +42,7 @@ def convert_excess_m_to_h():
 
 def main():
     # sprint_name = str(input("Sisesta täpselt sprindi/milestonei nimi "))
-    all_milestones = [0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    all_milestones = [0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     for i in all_milestones:
         add_time_to_team_members(get_issue_idds_from_milestone(f"Sprint {i}"))
     # print(team_members)

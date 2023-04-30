@@ -12,9 +12,9 @@ locations = ["Staadion", "Tudengimaja"]
 date = "22_04"
 devices = ["Pixel", "Xiaomi"]
 constellations = ["GPS", "GLONASS", "Galileo", "ALL"]
-parts = ["ALL", "Ring 1", "Ring 2", "Ring 3", "Ring 4"]
+parts = ["ALL", "Ring1", "Ring2", "Ring3", "Ring4", "Custom"]
 
-configuration = [locations[1], date, devices[0], constellations[0], parts[0]]
+configuration = [locations[1], date, devices[0], constellations[0], parts[5]]
 
 
 # Do conversions and save results to output folder
@@ -22,8 +22,6 @@ def convert_input_data():
     convert_ubx_to_csv(configuration[0], configuration[1], True)
     convert_raw_data_to_fix_coordinates(configuration[0], configuration[2], configuration[1], configuration[3], True)
     convert_GPST_to_time(configuration[0], configuration[2], configuration[1], True)
-
-raw_mean_deviation, processed_mean_deviation, raw_standard_deviation, processed_standard_deviation, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_deviation = main(date)
 
 def write_report_about_measurement():
     # Get the current file location
@@ -34,7 +32,7 @@ def write_report_about_measurement():
 
     # Set the output folder and file name
     output_folder = os.path.join(base_directory, "calculation_results")
-    output_file_name = f"{configuration[2]}_{configuration[1]}_{configuration[0]}.csv"
+    output_file_name = f"Results_{configuration[4]}_{configuration[2]}_{configuration[1]}_{configuration[0]}.csv"
 
     # Create the output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
@@ -62,6 +60,8 @@ def write_report_about_measurement():
 
 if __name__ == "__main__":
     convert_input_data()
+    raw_mean_deviation, processed_mean_deviation, raw_standard_deviation, processed_standard_deviation, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_deviation = main(
+        date)
     write_report_about_measurement()
 
 # ToDo Below
