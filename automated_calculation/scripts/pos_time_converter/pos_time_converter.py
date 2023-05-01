@@ -47,7 +47,7 @@ def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="22_04", c
                 gpsTime = lineList[0]
                 time = get_time_from_GPST(gpsTime)
                 latitude = lineList[1]
-                longitude = lineList[2]
+                longitude = lineList[2].split()[0]
                 row = [time, latitude, longitude]
                 writer.writerow(row)
 

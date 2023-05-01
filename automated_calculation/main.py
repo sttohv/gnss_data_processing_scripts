@@ -9,19 +9,20 @@ from automated_calculation.scripts.ubx_to_coordinates_converter.ubx_to_coordinat
 
 # Input parameters
 locations = ["Staadion", "Tudengimaja"]
-date = "22_04"
+date = "21_04"
 devices = ["Pixel", "Xiaomi"]
 constellations = ["GPS", "GLONASS", "Galileo", "ALL"]
 parts = ["ALL", "Ring1", "Ring2", "Ring3", "Ring4", "Custom"]
 
-configuration = [locations[1], date, devices[0], constellations[0], parts[5]]
+configuration = [locations[0], date, devices[0], constellations[3], parts[0]]
 
 
 # Do conversions and save results to output folder
 def convert_input_data():
-    convert_ubx_to_csv(configuration[0], configuration[1], True)
-    convert_raw_data_to_fix_coordinates(configuration[0], configuration[2], configuration[1], configuration[3], True)
-    convert_GPST_to_time(configuration[0], configuration[2], configuration[1], True)
+    pass
+    #convert_ubx_to_csv(configuration[0], configuration[1], True)
+    #convert_raw_data_to_fix_coordinates(configuration[0], configuration[2], configuration[1], configuration[3], True)
+    #convert_GPST_to_time(configuration[0], configuration[2], configuration[1], True)
 
 def write_report_about_measurement():
     # Get the current file location

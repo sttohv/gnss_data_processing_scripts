@@ -18,7 +18,7 @@ def convert_unix_time_millis_to_time(unix_time_millis: int):
 # Constants (choose one that fits for you or make your own)
 # calculating determines if whole function (True) or just this file (False)
 # NOTE both False and True work for calculating
-def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", date="22_04", provider="GPS", calculating=True):
+def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", date="22_04", provider="GPS", calculating=False):
     output_filename = f"{device}_{data_type}{provider}_{date}_{location}.csv"
     input_filename = f"{device}_{date}_{location}"
 

@@ -110,7 +110,8 @@ def ez_math(dataframe):
         normalized_direction_vector = normalize_direction_vector(direction_vector, direction_vector_length)
 
         # Check if direction_vector was normalized correctly
-        if math.sqrt(normalized_direction_vector.x ** 2 + normalized_direction_vector.y ** 2) == 1:
+        sqrt = math.sqrt(normalized_direction_vector.x ** 2 + normalized_direction_vector.y ** 2)
+        if sqrt <= 1 and sqrt > 0.99999999:
             row["normalized_correctly"] = True
         else:
             # Can be potential error
@@ -238,16 +239,19 @@ def main(date="22_04"):
 
     processed_merged, raw_merged = merge_dataframes(converted_raw, converted_processed, ground_truth_with_euclidean)
 
+    final_df_processed = processed_merged
+    final_df_raw = raw_merged
+    final_df_processed.to_csv("processed_merged.csv")
+    final_df_raw.to_csv("raw_merged.csv")
+
     ez_math(processed_merged)
     ez_math(raw_merged)
 
-    print(processed_merged, " processed calculated")
-    print(converted_processed, " processed converted")
-    print(raw_merged, " raw calculated")
-    print(converted_raw, " raw converted")
+
 
     raw_distances = []
     processed_distances = []
+
 
     for index, row in processed_merged.iterrows():
         # Drawing related operations
@@ -257,6 +261,9 @@ def main(date="22_04"):
         processed_deviation = calculate_deviation(0, row)
         processed_distances.append(processed_deviation)
 
+    processed_merged['deviation'] = processed_distances
+    final_df_processed['deviation'] = processed_distances
+
     for index, row in raw_merged.iterrows():
         # Drawing related operations
         # min_x, min_y = find_min_lest97_coordinates(raw_merged)
@@ -265,8 +272,20 @@ def main(date="22_04"):
         raw_deviation = calculate_deviation(0, row)
         raw_distances.append(raw_deviation)
 
+    raw_merged['deviation'] = raw_distances
+    final_df_raw['deviation'] = raw_distances
+
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)
+
+    final_df_processed.to_csv("final_processed_merged.csv")
+    final_df_raw.to_csv("final_raw_merged.csv")
+
+
+    print(processed_merged, " processed calculated")
+    print(converted_processed, " processed converted")
+    print(raw_merged, " raw calculated")
+    print(converted_raw, " raw converted")
 
     print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
     print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")
