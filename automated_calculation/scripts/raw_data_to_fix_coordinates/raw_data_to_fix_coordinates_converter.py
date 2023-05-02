@@ -39,7 +39,7 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
     with open(output_file_path, 'w', newline='') as f:
         writer = csv.writer(f)
 
-        header = ["fix", "provider", "latitude", "longitude", "time"]
+        header = ["time", "latitude", "longitude"]
         writer.writerow(header)
 
         # Change file name if needed
@@ -56,11 +56,12 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
             line_data_type = lineList[0]
             if line_data_type == data_type:
                 line_provider = lineList[1]
+                # ToDo provider needs to be changed because it only works with GPS atm
                 if line_provider == provider:
                     latitude = lineList[2]
                     longitude = lineList[3]
                     time = convert_unix_time_millis_to_time(int(lineList[8]))
-                    row = [line_data_type, line_provider, latitude, longitude, time]
+                    row = [time, latitude, longitude]
                     writer.writerow(row)
 
 if __name__ == "__main__":

@@ -58,9 +58,25 @@ def convert_time_column(dataframe, time_format="%H:%M:%S"):
 
 
 # Merging dataframes
+# def merge_dataframes(raw_rover, processed_rover, ground_truth):
+#     processed_merged = pd.merge(processed_rover, ground_truth, on="time")
+#     raw_merged = pd.merge(raw_rover, ground_truth, on="time")
+#     return processed_merged, raw_merged
+
 def merge_dataframes(raw_rover, processed_rover, ground_truth):
     processed_merged = pd.merge(processed_rover, ground_truth, on="time")
     raw_merged = pd.merge(raw_rover, ground_truth, on="time")
+
+    processed_merged = processed_merged.rename(columns={'latitude_x': 'rover_latitude',
+                                                        'longitude_x': 'rover_longitude',
+                                                        'latitude_y': 'ground_truth_latitude',
+                                                        'longitude_y': 'ground_truth_longitude'})
+
+    raw_merged = raw_merged.rename(columns={'latitude_x': 'rover_latitude',
+                                            'longitude_x': 'rover_longitude',
+                                            'latitude_y': 'ground_truth_latitude',
+                                            'longitude_y': 'ground_truth_longitude'})
+
     return processed_merged, raw_merged
 
 
@@ -85,16 +101,16 @@ def replace_WGS84_with_LEST97(dataframe):
 
 
 # ToDo Rename function more properly
-# Merged dataframe should be input
-def ez_math(dataframe):
-    for index, row in dataframe.iterrows():
+def ez_math(merged_dataframe):
+    result_dataframe = merged_dataframe.copy()
+    for index, row in result_dataframe.iterrows():
         if index == 0:
             continue
 
         # ToDo look over if they should be x or y
-        previous_row = dataframe.iloc[index - 1]
-        current_coord = L_Est97(row["latitude_y"], row["longitude_y"])
-        previous_coord = L_Est97(previous_row["latitude_y"], previous_row["longitude_y"])
+        previous_row = merged_dataframe.iloc[index - 1]
+        current_coord = L_Est97(row["ground_truth_latitude"], row["ground_truth_longitude"])
+        previous_coord = L_Est97(previous_row["ground_truth_latitude"], previous_row["ground_truth_longitude"])
 
         # Calculate length of direction vector between previous and current
         direction_vector = calculate_direction_vector(current_coord, previous_coord)
@@ -119,13 +135,14 @@ def ez_math(dataframe):
             continue
 
         # Calculate new rover coordinate
-        current_rover_coordinate = L_Est97(row["latitude_x"], row["longitude_x"])
+        current_rover_coordinate = L_Est97(row["rover_latitude"], row["rover_longitude"])
         new_rover_coordinate = calculate_new_rover_coordinate(normalized_direction_vector, current_rover_coordinate,
                                                               DISTANCE_ERROR)
 
-        row["latitude_x"] = new_rover_coordinate.x
-        row["latitude_x"] = new_rover_coordinate.y
+        result_dataframe.at[index, "rover_latitude"] = new_rover_coordinate.x
+        result_dataframe.at[index, "rover_longitude"] = new_rover_coordinate.y
 
+    return result_dataframe
 
 def calculate_direction_vector(current_coord, previous_coord):
     return L_Est97(current_coord.x - previous_coord.x, current_coord.y - previous_coord.y)
@@ -143,8 +160,8 @@ def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_co
 
 def calculate_deviation(deviation, row):
     # Incrementing deviation
-    rover_coord_lest97 = L_Est97(row["latitude_x"], row["longitude_x"])
-    ground_truth_coord_lest97 = L_Est97(row["latitude_y"], row["longitude_y"])
+    rover_coord_lest97 = L_Est97(row["rover_latitude"], row["rover_latitude"])
+    ground_truth_coord_lest97 = L_Est97(row["ground_truth_latitude"], row["ground_truth_latitude"])
     deviation += calculate_euclidean_distance(rover_coord_lest97, ground_truth_coord_lest97)
     return deviation
 
@@ -162,6 +179,7 @@ def calculate_euclidean_distance(coord1: L_Est97, coord2: L_Est97):
     return math.sqrt((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2)
 
 
+# Duplicate function. probably better than mine
 def wgs84_to_lest97_coordinates(latitudes, longitudes):
     coordinates_wgs84 = np.column_stack((latitudes, longitudes))
     return [converter.wgs84_to_l_est97(WGS84(lat=lat, long=long)) for lat, long in coordinates_wgs84]
@@ -169,8 +187,8 @@ def wgs84_to_lest97_coordinates(latitudes, longitudes):
 
 # ToDo Add constant for the -10 (ask Juhan for reference)
 def find_min_lest97_coordinates(dataframe):
-    latitudes = dataframe['latitude_x'].to_numpy()
-    longitudes = dataframe['longitude_x'].to_numpy()
+    latitudes = dataframe['rover_latitude'].to_numpy()
+    longitudes = dataframe['rover_latitude'].to_numpy()
     coordinates_lest97 = wgs84_to_lest97_coordinates(latitudes, longitudes)
     return min(coord.x for coord in coordinates_lest97) - 10, min(coord.y for coord in coordinates_lest97) - 10
 
@@ -213,7 +231,7 @@ def filter_time_range(dataframe):
 
 
 # Needs redoing
-def main(date="22_04"):
+def main(date="21_04"):
     # draft main
     # 1. read data
     # 2. replace WGS84 w LEST97
@@ -222,6 +240,9 @@ def main(date="22_04"):
     # 5. Math() will replace current rover coordinates with fixed ones
 
     raw_rover, processed_rover, ground_truth = read_data_files(date, "input")
+
+    # print(processed_rover, " processed_rover")
+    print(raw_rover, " raw_rover")
 
     # This removes first 15 min. If use smaller circles then comment out
     # raw_rover = filter_time_range(raw_rover)
@@ -232,28 +253,19 @@ def main(date="22_04"):
     converted_raw = replace_WGS84_with_LEST97(raw_rover)
     converted_ground_truth = replace_WGS84_with_LEST97(ground_truth)
 
-
     ground_truth_with_euclidean = add_ground_truth_euclidean(converted_ground_truth)
 
     # print(ground_truth_with_euclidean)
 
     processed_merged, raw_merged = merge_dataframes(converted_raw, converted_processed, ground_truth_with_euclidean)
 
-    final_df_processed = processed_merged
-    final_df_raw = raw_merged
-    final_df_processed.to_csv("processed_merged.csv")
-    final_df_raw.to_csv("raw_merged.csv")
-
-    ez_math(processed_merged)
-    ez_math(raw_merged)
-
-
+    aftermath_processed = ez_math(processed_merged)
+    aftermath_raw = ez_math(raw_merged)
 
     raw_distances = []
     processed_distances = []
 
-
-    for index, row in processed_merged.iterrows():
+    for index, row in aftermath_processed.iterrows():
         # Drawing related operations
         # min_x, min_y = find_min_lest97_coordinates(processed_merged)
         # processed_deviation = draw_coordinates_and_their_connection(row, 'go-', 'bo', 'ro', 0, min_x, min_y)
@@ -261,10 +273,9 @@ def main(date="22_04"):
         processed_deviation = calculate_deviation(0, row)
         processed_distances.append(processed_deviation)
 
-    processed_merged['deviation'] = processed_distances
-    final_df_processed['deviation'] = processed_distances
+    aftermath_processed['deviation'] = processed_distances
 
-    for index, row in raw_merged.iterrows():
+    for index, row in aftermath_raw.iterrows():
         # Drawing related operations
         # min_x, min_y = find_min_lest97_coordinates(raw_merged)
         # raw_deviation = draw_coordinates_and_their_connection(row, 'ro-', 'bo', 'go',0, min_x, min_y)
@@ -272,20 +283,19 @@ def main(date="22_04"):
         raw_deviation = calculate_deviation(0, row)
         raw_distances.append(raw_deviation)
 
-    raw_merged['deviation'] = raw_distances
-    final_df_raw['deviation'] = raw_distances
+    aftermath_raw['deviation'] = raw_distances
+
+    aftermath_raw.to_csv("raw_aftermath")
+    aftermath_processed.to_csv("proc_aftermath")
 
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)
 
-    final_df_processed.to_csv("final_processed_merged.csv")
-    final_df_raw.to_csv("final_raw_merged.csv")
 
-
-    print(processed_merged, " processed calculated")
-    print(converted_processed, " processed converted")
-    print(raw_merged, " raw calculated")
-    print(converted_raw, " raw converted")
+    # print(processed_merged, " processed calculated")
+    # print(converted_processed, " processed converted")
+    # print(raw_merged, " raw calculated")
+    # print(converted_raw, " raw converted")
 
     print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
     print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")

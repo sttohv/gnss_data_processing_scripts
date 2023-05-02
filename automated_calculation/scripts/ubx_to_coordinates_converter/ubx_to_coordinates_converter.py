@@ -46,6 +46,7 @@ def convert_ubx_to_csv(location="Tudengimaja", date="22_04", calculating=False):
             if isinstance(parsed_data, NMEAMessage):
                 if parsed_data.identity == 'GNRMC':
                     row = [parsed_data.__dict__.get('time'), parsed_data.__dict__.get('lat'), parsed_data.__dict__.get('lon')]
+                    print(parsed_data.__dict__)
                     writer.writerow(row)
 
 if __name__ == "__main__":
