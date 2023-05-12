@@ -57,12 +57,6 @@ def convert_time_column(dataframe, time_format="%H:%M:%S"):
     return dataframe
 
 
-# Merging dataframes
-# def merge_dataframes(raw_rover, processed_rover, ground_truth):
-#     processed_merged = pd.merge(processed_rover, ground_truth, on="time")
-#     raw_merged = pd.merge(raw_rover, ground_truth, on="time")
-#     return processed_merged, raw_merged
-
 def merge_dataframes(raw_rover, processed_rover, ground_truth):
     processed_merged = pd.merge(processed_rover, ground_truth, on="time")
     raw_merged = pd.merge(raw_rover, ground_truth, on="time")
@@ -101,7 +95,7 @@ def replace_WGS84_with_LEST97(dataframe):
 
 
 # ToDo Rename function more properly
-def ez_math(merged_dataframe):
+def remove_systematic_error_from_dataframe(merged_dataframe):
     result_dataframe = merged_dataframe.copy()
     for index, row in result_dataframe.iterrows():
         if index == 0:
@@ -153,9 +147,13 @@ def normalize_direction_vector(direction_vector, direction_length_vector):
     return L_Est97(direction_vector.x / direction_length_vector, direction_vector.y / direction_length_vector)
 
 
+# def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_coordinate, distance_error):
+#     return L_Est97(distance_error * normalised_direction_vector.x + current_rover_coordinate.x,
+#                    distance_error * normalised_direction_vector.y + current_rover_coordinate.y)
+
 def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_coordinate, distance_error):
-    return L_Est97(distance_error * normalised_direction_vector.x + current_rover_coordinate.x,
-                   distance_error * normalised_direction_vector.y + current_rover_coordinate.y)
+    return L_Est97(current_rover_coordinate.x - distance_error * normalised_direction_vector.x,
+                    current_rover_coordinate.y - distance_error * normalised_direction_vector.y)
 
 
 def calculate_deviation(deviation, row):
@@ -239,7 +237,7 @@ def main(date="21_04"):
     # 4. Merge dataframes
     # 5. Math() will replace current rover coordinates with fixed ones
 
-    raw_rover, processed_rover, ground_truth = read_data_files(date, "input")
+    raw_rover, processed_rover, ground_truth = read_data_files(date)
 
     # print(processed_rover, " processed_rover")
     print(raw_rover, " raw_rover")
@@ -259,8 +257,8 @@ def main(date="21_04"):
 
     processed_merged, raw_merged = merge_dataframes(converted_raw, converted_processed, ground_truth_with_euclidean)
 
-    aftermath_processed = ez_math(processed_merged)
-    aftermath_raw = ez_math(raw_merged)
+    aftermath_processed = remove_systematic_error_from_dataframe(processed_merged)
+    aftermath_raw = remove_systematic_error_from_dataframe(raw_merged)
 
     raw_distances = []
     processed_distances = []
@@ -285,8 +283,17 @@ def main(date="21_04"):
 
     aftermath_raw['deviation'] = raw_distances
 
-    aftermath_raw.to_csv("raw_aftermath")
-    aftermath_processed.to_csv("proc_aftermath")
+
+    aftermath_raw.to_csv("raw_aftermath.csv")
+    aftermath_processed.to_csv("proc_aftermath.csv")
+
+    # ToDo should be implemented in better manner
+    testing_df = aftermath_processed.merge(aftermath_raw[['time', 'num_of_galileo_E1_freq_satellites',
+                                                          'num_of_galileo_E5_freq_satellites',
+                                                          'num_of_GPS_L1_freq_satellites',
+                                                          'num_of_GPS_L5_freq_satellites']], on='time',how='left')
+    testing_df.to_csv("testing_aftermath.csv")
+
 
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)

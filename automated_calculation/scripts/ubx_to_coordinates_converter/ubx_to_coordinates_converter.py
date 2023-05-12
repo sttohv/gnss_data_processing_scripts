@@ -1,13 +1,12 @@
 import csv
 import os
-import sys
-from pyubx2 import UBXReader
+from pyubx2 import UBXReader, UBXMessage
 from pynmeagps import NMEAMessage
 
 file_type = "Referentsandmed"
 
 # NOTE both False and True work for calculating
-def convert_ubx_to_csv(location="Tudengimaja", date="22_04", calculating=False):
+def convert_ubx_to_csv(location="Test", date="07_05", calculating=False):
     output_filename = f"{file_type}_{date}_{location}.csv"
     input_filename = f"{file_type}_{date}_{location}"
 
@@ -43,11 +42,23 @@ def convert_ubx_to_csv(location="Tudengimaja", date="22_04", calculating=False):
         ubr = UBXReader(stream)
 
         for (raw_data, parsed_data) in ubr:
+            print(raw_data)
             if isinstance(parsed_data, NMEAMessage):
                 if parsed_data.identity == 'GNRMC':
                     row = [parsed_data.__dict__.get('time'), parsed_data.__dict__.get('lat'), parsed_data.__dict__.get('lon')]
-                    print(parsed_data.__dict__)
+                    # print(parsed_data.__dict__)
                     writer.writerow(row)
+
+        # for (raw_data, parsed_data) in ubr:
+        #     if isinstance(parsed_data, UBXMessage):
+        #         print(parsed_data)
+        #         if parsed_data.identity == "NAV-PVT":
+        #             time_utc = f"{parsed_data.hour:02d}:{parsed_data.min:02d}:{parsed_data.second:02d}.{parsed_data.nano // 10:03d}"
+        #             latitude = parsed_data.lat
+        #             longitude = parsed_data.lon
+        #             row = [time_utc, latitude, longitude]
+        #             print(row)
+        #             writer.writerow(row)
 
 if __name__ == "__main__":
     convert_ubx_to_csv()
