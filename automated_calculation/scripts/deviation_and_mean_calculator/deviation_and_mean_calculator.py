@@ -8,9 +8,11 @@ from pathlib import Path
 from pandas import read_csv
 from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 
+# ToDo this is dynamic
 EPSILON = 0.2
 # ToDo should probably placed elsewhere
-DISTANCE_ERROR = 0.26
+# 0.26 pixel, 0.15 Xiaomi
+DISTANCE_ERROR = 0.16
 
 converter = CoordinateConverter()
 
@@ -101,7 +103,6 @@ def remove_systematic_error_from_dataframe(merged_dataframe):
         if index == 0:
             continue
 
-        # ToDo look over if they should be x or y
         previous_row = merged_dataframe.iloc[index - 1]
         current_coord = L_Est97(row["ground_truth_latitude"], row["ground_truth_longitude"])
         previous_coord = L_Est97(previous_row["ground_truth_latitude"], previous_row["ground_truth_longitude"])
@@ -138,6 +139,7 @@ def remove_systematic_error_from_dataframe(merged_dataframe):
 
     return result_dataframe
 
+
 def calculate_direction_vector(current_coord, previous_coord):
     return L_Est97(current_coord.x - previous_coord.x, current_coord.y - previous_coord.y)
 
@@ -146,10 +148,6 @@ def calculate_direction_vector(current_coord, previous_coord):
 def normalize_direction_vector(direction_vector, direction_length_vector):
     return L_Est97(direction_vector.x / direction_length_vector, direction_vector.y / direction_length_vector)
 
-
-# def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_coordinate, distance_error):
-#     return L_Est97(distance_error * normalised_direction_vector.x + current_rover_coordinate.x,
-#                    distance_error * normalised_direction_vector.y + current_rover_coordinate.y)
 
 def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_coordinate, distance_error):
     return L_Est97(current_rover_coordinate.x - distance_error * normalised_direction_vector.x,
@@ -230,16 +228,8 @@ def filter_time_range(dataframe):
 
 # Needs redoing
 def main(date="21_04"):
-    # draft main
-    # 1. read data
-    # 2. replace WGS84 w LEST97
-    # 3. add euclidean distances (and remove NaN values)
-    # 4. Merge dataframes
-    # 5. Math() will replace current rover coordinates with fixed ones
-
     raw_rover, processed_rover, ground_truth = read_data_files(date)
 
-    # print(processed_rover, " processed_rover")
     print(raw_rover, " raw_rover")
 
     # This removes first 15 min. If use smaller circles then comment out
@@ -288,21 +278,17 @@ def main(date="21_04"):
     aftermath_processed.to_csv("proc_aftermath.csv")
 
     # ToDo should be implemented in better manner
-    testing_df = aftermath_processed.merge(aftermath_raw[['time', 'num_of_galileo_E1_freq_satellites',
+    aftermath_processed_w_satellites = aftermath_processed.merge(aftermath_raw[['time', 'num_of_galileo_E1_freq_satellites',
                                                           'num_of_galileo_E5_freq_satellites',
                                                           'num_of_GPS_L1_freq_satellites',
-                                                          'num_of_GPS_L5_freq_satellites']], on='time',how='left')
-    testing_df.to_csv("testing_aftermath.csv")
+                                                          'num_of_GPS_L5_freq_satellites',
+                                                          'Cn0DbHz_epoch_average',
+                                                          'pseudorange_rate_meters_per_second_epoch_average']], on='time',how='left')
+    aftermath_processed_w_satellites.to_csv("aftermath_processed_w_satellites.csv")
 
 
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)
-
-
-    # print(processed_merged, " processed calculated")
-    # print(converted_processed, " processed converted")
-    # print(raw_merged, " raw calculated")
-    # print(converted_raw, " raw converted")
 
     print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
     print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")
