@@ -18,7 +18,7 @@ def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="22_04", c
 
     # Individual procedure
     if calculating:
-        output_directory = os.path.join(base_directory, "output", f"{date}")
+        output_directory = os.path.join(base_directory, "intermediate_results", f"{date}")
         # os.makedirs(os.path.dirname(f"{output_directory}/{output_filename}"), exist_ok=True)
     else:
         output_directory = os.path.join(base_directory, 'scripts', 'pos_time_converter', "output", f"{date}")

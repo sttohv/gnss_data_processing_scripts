@@ -40,7 +40,7 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
     if calculating:
         output_directory = os.path.join(base_directory, "output", f"{date}")
     else:
-        output_directory = os.path.join(base_directory, 'scripts', 'raw_data_to_fix_coordinates', "output", f"{date}")
+        output_directory = os.path.join(base_directory, 'scripts', 'raw_data_to_fix_coordinates', "intermediate_results", f"{date}")
 
     os.makedirs(output_directory, exist_ok=True)
     output_file_path = os.path.join(output_directory, output_filename)

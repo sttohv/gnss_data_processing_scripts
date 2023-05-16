@@ -18,8 +18,8 @@ converter = CoordinateConverter()
 
 
 # Read the files in (needs to be changed according to file)
-def read_data_files(date, input_folder=None):
-    if input_folder is None:
+def read_data_files(date, input_directory=None):
+    if input_directory is None:
         # Get the current file location
         current_script_path = os.path.realpath(__file__)
 
@@ -27,9 +27,9 @@ def read_data_files(date, input_folder=None):
         base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
 
         # Set the default input folder
-        input_folder = os.path.join(base_directory, "output", date)
+        input_directory = os.path.join(base_directory, "output", date)
 
-    input_path = Path(input_folder)
+    input_path = Path(input_directory)
 
     file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".csv"]
 
