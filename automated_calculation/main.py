@@ -1,7 +1,7 @@
 import csv
 import os
 
-from automated_calculation.scripts.deviation_and_mean_calculator.deviation_and_mean_calculator import main
+from automated_calculation.scripts.uncertainty_and_mean_calculator.uncertainty_and_mean_calculator import main
 from automated_calculation.scripts.pos_time_converter.pos_time_converter import convert_GPST_to_time
 from automated_calculation.scripts.raw_data_to_fix_coordinates.raw_data_to_fix_coordinates_converter import \
     convert_raw_data_to_fix_coordinates
@@ -9,13 +9,15 @@ from automated_calculation.scripts.ubx_to_coordinates_converter.ubx_to_coordinat
 
 # Input parameters
 locations = ["Staadion", "Tudengimaja"]
-date = "13_05"
+date = "22_04"
 devices = ["Pixel", "Xiaomi"]
 # ToDo constellations don't serve any purpose apart from raw data conversion (should be named better)
 constellations = ["GPS", "GLONASS", "Galileo", "ALL"]
-parts = ["ALL", "Ring1", "Ring2", "Ring3", "Ring4", "Custom"]
+parts = ["ALL", "Galileo", "GLONASS", "GPS", "GPS_Galileo", "Custom"]
 
-configuration = [locations[0], date, devices[0], constellations[0], parts[5]]
+# ToDo separator of all csv files should also be configurable
+# ToDo configuration should be handled in a separate .config/yaml file
+configuration = [locations[1], date, devices[1], constellations[0], parts[4]]
 
 
 # Do conversions and save results to output folder
@@ -23,8 +25,8 @@ def convert_input_data():
     # pass
     # convert_ubx_to_csv(configuration[0], configuration[1], True)
     # print("ubx converted successfully")
-    # convert_raw_data_to_fix_coordinates(configuration[0], configuration[2], configuration[1], configuration[3], True)
-    # print("raw converted successfully")
+    convert_raw_data_to_fix_coordinates(configuration[0], configuration[2], configuration[1], configuration[3], True)
+    print("raw converted successfully")
     convert_GPST_to_time(configuration[0], configuration[2], configuration[1], True)
     print("processed converted successfully")
 
@@ -35,8 +37,10 @@ def write_report_about_measurement():
     # Get the base directory
     base_directory = os.path.dirname(current_script_path)
 
+    # ToDo Should create output folder (already does that)
+
     # Set the output folder and file name
-    output_folder = os.path.join(base_directory, "calculation_results")
+    output_folder = os.path.join(base_directory, "calculation_results", date)
     output_file_name = f"Results_{configuration[4]}_{configuration[2]}_{configuration[1]}_{configuration[0]}.csv"
 
     # Create the output folder if it doesn't exist
@@ -56,11 +60,11 @@ def write_report_about_measurement():
         writer.writerow(row_2)
         row_3 = ["Toorandmete ja järeltöötluse keskmise vea vahe", subtraction_of_raw_and_processed_mean_deviation]
         writer.writerow(row_3)
-        row_4 = ["Toorandmete ja referentsandmete standardhälve", raw_standard_deviation]
+        row_4 = ["Toorandmete ja referentsandmete standardmääramatus", raw_standard_deviation]
         writer.writerow(row_4)
-        row_5 = ["Järeltöötlus andmete ja referentsandmete standardhälve", processed_standard_deviation]
+        row_5 = ["Järeltöötlus andmete ja referentsandmete standardmääramatus", processed_standard_deviation]
         writer.writerow(row_5)
-        row_6 = ["Toorandmete ja järeltöötluse standardhälve vahe", subtraction_of_raw_and_processed_standard_deviation]
+        row_6 = ["Toorandmete ja järeltöötluse standardmääramatus vahe", subtraction_of_raw_and_processed_standard_deviation]
         writer.writerow(row_6)
 
 if __name__ == "__main__":
