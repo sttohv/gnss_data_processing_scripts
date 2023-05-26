@@ -10,9 +10,9 @@ from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 
 # ToDo this is dynamic
 EPSILON = 0.2
-# ToDo should probably placed elsewhere
-# 0.26 pixel, 0.15 Xiaomi
-DISTANCE_ERROR = 0.16
+# ToDo should probably placed elsewhere (prolly in config)
+# 0.26 pixel, 0.137 Xiaomi
+DISTANCE_ERROR = 0.137
 
 converter = CoordinateConverter()
 
@@ -156,8 +156,8 @@ def calculate_new_rover_coordinate(normalised_direction_vector, current_rover_co
 
 def calculate_deviation(deviation, row):
     # Incrementing deviation
-    rover_coord_lest97 = L_Est97(row["rover_latitude"], row["rover_latitude"])
-    ground_truth_coord_lest97 = L_Est97(row["ground_truth_latitude"], row["ground_truth_latitude"])
+    rover_coord_lest97 = L_Est97(row["rover_latitude"], row["rover_longitude"])
+    ground_truth_coord_lest97 = L_Est97(row["ground_truth_latitude"], row["ground_truth_longitude"])
     deviation += calculate_euclidean_distance(rover_coord_lest97, ground_truth_coord_lest97)
     return deviation
 
@@ -189,7 +189,8 @@ def find_min_lest97_coordinates(dataframe):
     return min(coord.x for coord in coordinates_lest97) - 10, min(coord.y for coord in coordinates_lest97) - 10
 
 
-def calculate_standard_deviation(distances):
+# ToDo look over if we are calculating uncertainty or deviation
+def calculate_standard_uncertainty(distances):
     mean_distance = np.mean(distances)
     squared_diff = [(d - mean_distance) ** 2 for d in distances]
     variance = np.mean(squared_diff)
@@ -229,8 +230,6 @@ def filter_time_range(dataframe):
 # Needs redoing
 def main(date="21_04"):
     raw_rover, processed_rover, ground_truth = read_data_files(date)
-
-    print(raw_rover, " raw_rover")
 
     # This removes first 15 min. If use smaller circles then comment out
     # raw_rover = filter_time_range(raw_rover)
@@ -273,7 +272,6 @@ def main(date="21_04"):
 
     aftermath_raw['deviation'] = raw_distances
 
-
     aftermath_raw.to_csv("raw_aftermath.csv")
     aftermath_processed.to_csv("proc_aftermath.csv")
 
@@ -293,14 +291,14 @@ def main(date="21_04"):
     print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
     print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")
 
-    raw_standard_deviation = calculate_standard_deviation(raw_distances)
-    processed_standard_deviation = calculate_standard_deviation(processed_distances)
+    raw_standard_uncertainty = calculate_standard_uncertainty(raw_distances)
+    processed_standard_uncertainty = calculate_standard_uncertainty(processed_distances)
 
-    print(raw_standard_deviation, " Toorandmete ja referentsandmete standardhälve")
-    print(processed_standard_deviation, " Järeltöötlus andmete ja referentsandmete standardhälve")
+    print(raw_standard_uncertainty, " Toorandmete ja referentsandmete standardmääramatus")
+    print(processed_standard_uncertainty, " Järeltöötlus andmete ja referentsandmete standardmääramatus")
 
     subtraction_of_raw_and_processed_mean_deviation = raw_mean_deviation - processed_mean_deviation
-    subtraction_of_raw_and_processed_standard_deviation = raw_standard_deviation - processed_standard_deviation
+    subtraction_of_raw_and_processed_standard_uncertainty = raw_standard_uncertainty - processed_standard_uncertainty
 
     # Drawing
     # plt.figure(dpi=400)
@@ -309,7 +307,7 @@ def main(date="21_04"):
     # plt.ylim(0, 60)
     # plt.show()
 
-    return raw_mean_deviation, processed_mean_deviation, raw_standard_deviation, processed_standard_deviation, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_deviation
+    return raw_mean_deviation, processed_mean_deviation, raw_standard_uncertainty, processed_standard_uncertainty, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_uncertainty
 
 
 if __name__ == "__main__":
