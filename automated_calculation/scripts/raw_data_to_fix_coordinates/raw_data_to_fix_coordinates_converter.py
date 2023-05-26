@@ -7,7 +7,6 @@ from pathlib import Path
 FIX_DATA_TYPE = "Fix"
 RAW_DATA_TYPE = "Raw"
 
-# ToDo these might have to be renamed to sth more descriptive
 SINGLE_FREQUENCY_BANDWIDTH = "1575420030"
 DUAL_FREQUENCY_BANDWIDTH = "1176450050"
 GALILEO_CONSTELLATION_TYPE = "6"
@@ -26,10 +25,6 @@ def convert_unix_time_millis_to_time(unix_time_millis: int):
     return formatted_time
 
 
-# Constants (choose one that fits for you or make your own)
-# calculating determines if whole function (True) or just this file (False)
-# NOTE both False and True work for calculating
-# ToDo provider here doesnt mean constellation but rather fix type (GPS, NLP, FLP). Login in main.py should be changed
 def convert_raw_data_to_fix_coordinates(location="Staadion", device="Pixel", date="13_05", provider="GPS"):
     filepaths = get_files(date, device, location, provider)
 
@@ -71,7 +66,6 @@ def convert_raw_data_to_fix_coordinates(location="Staadion", device="Pixel", dat
             line_list = line.split(",")
             line_data_type = line_list[0]
 
-            # ToDo separate function for parsing Fix data?
             if line_data_type == FIX_DATA_TYPE:
                 line_provider = line_list[1]
 
@@ -94,7 +88,6 @@ def convert_raw_data_to_fix_coordinates(location="Staadion", device="Pixel", dat
                     fix_longitude = line_list[3]
                     fix_converted_time = convert_unix_time_millis_to_time(int(line_list[8]))
 
-            # ToDo separate function for parsing Raw data?
             elif line_data_type == RAW_DATA_TYPE and current_fix_time != 0:
                 frequency = line_list[22]
                 constellation_type = line_list[28]

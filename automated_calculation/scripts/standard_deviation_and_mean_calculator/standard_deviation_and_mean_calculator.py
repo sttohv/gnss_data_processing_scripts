@@ -8,27 +8,16 @@ from pathlib import Path
 from pandas import read_csv
 from coordinates.converter import CoordinateConverter, WGS84, L_Est97
 
-# ToDo this is dynamic
-EPSILON = 0.2
-# ToDo should probably placed elsewhere (prolly in config)
-# 0.26 pixel, 0.137 Xiaomi
-DISTANCE_ERROR = 0.137
-
 converter = CoordinateConverter()
 
-
 # Read the files in (needs to be changed according to file)
-def read_data_files(date, input_directory=None):
-    if input_directory is None:
-        # Get the current file location
-        current_script_path = os.path.realpath(__file__)
+def read_data_files(date):
+    # Get the current file location
+    current_script_path = os.path.realpath(__file__)
+    # Get the base directory
+    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
 
-        # Get the base directory
-        base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
-
-        # Set the default input folder
-        input_directory = os.path.join(base_directory, "intermediate_results", date)
-
+    input_directory = os.path.join(base_directory, "output", date)
     input_path = Path(input_directory)
 
     file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".csv"]
@@ -41,7 +30,6 @@ def read_data_files(date, input_directory=None):
     processed_rover_file = input_path / processed_rover_data_file
     ground_truth_file = input_path / ground_truth_data_file
 
-    # Change delimiter if necessary (Excel and Google sheets have different values ; and , accordingly)
     raw_rover = read_csv(raw_rover_file, delimiter=",")
     processed_rover = read_csv(processed_rover_file, delimiter=",")
     ground_truth = read_csv(ground_truth_file, delimiter=",")
@@ -96,8 +84,7 @@ def replace_WGS84_with_LEST97(dataframe):
     return dataframe
 
 
-# ToDo Rename function more properly
-def remove_systematic_error_from_dataframe(merged_dataframe):
+def remove_systematic_error_from_dataframe(merged_dataframe, systematic_error):
     result_dataframe = merged_dataframe.copy()
     for index, row in result_dataframe.iterrows():
         if index == 0:
@@ -132,7 +119,7 @@ def remove_systematic_error_from_dataframe(merged_dataframe):
         # Calculate new rover coordinate
         current_rover_coordinate = L_Est97(row["rover_latitude"], row["rover_longitude"])
         new_rover_coordinate = calculate_new_rover_coordinate(normalized_direction_vector, current_rover_coordinate,
-                                                              DISTANCE_ERROR)
+                                                              systematic_error)
 
         result_dataframe.at[index, "rover_latitude"] = new_rover_coordinate.x
         result_dataframe.at[index, "rover_longitude"] = new_rover_coordinate.y
@@ -144,7 +131,6 @@ def calculate_direction_vector(current_coord, previous_coord):
     return L_Est97(current_coord.x - previous_coord.x, current_coord.y - previous_coord.y)
 
 
-# ToDo Division my have to be overlooked
 def normalize_direction_vector(direction_vector, direction_length_vector):
     return L_Est97(direction_vector.x / direction_length_vector, direction_vector.y / direction_length_vector)
 
@@ -181,7 +167,6 @@ def wgs84_to_lest97_coordinates(latitudes, longitudes):
     return [converter.wgs84_to_l_est97(WGS84(lat=lat, long=long)) for lat, long in coordinates_wgs84]
 
 
-# ToDo Add constant for the -10 (ask Juhan for reference)
 def find_min_lest97_coordinates(dataframe):
     latitudes = dataframe['rover_latitude'].to_numpy()
     longitudes = dataframe['rover_latitude'].to_numpy()
@@ -189,8 +174,7 @@ def find_min_lest97_coordinates(dataframe):
     return min(coord.x for coord in coordinates_lest97) - 10, min(coord.y for coord in coordinates_lest97) - 10
 
 
-# ToDo look over if we are calculating uncertainty or deviation
-def calculate_standard_uncertainty(distances):
+def calculate_standard_deviation(distances):
     mean_distance = np.mean(distances)
     squared_diff = [(d - mean_distance) ** 2 for d in distances]
     variance = np.mean(squared_diff)
@@ -198,7 +182,7 @@ def calculate_standard_uncertainty(distances):
     return standard_deviation
 
 
-def add_ground_truth_euclidean(dataframe):
+def add_ground_truth_euclidean(dataframe, epsilon):
     for index, row in dataframe.iterrows():
         if index == 0:
             continue
@@ -212,47 +196,46 @@ def add_ground_truth_euclidean(dataframe):
 
         # Ternary conditional expression for if-else one-liner
         dataframe.at[index, "distance_from_last_coord"] = (
-            euclidean_distance_between_coords if euclidean_distance_between_coords > EPSILON else float("nan")
+            euclidean_distance_between_coords if euclidean_distance_between_coords > epsilon else float("nan")
         )
 
     dataframe = dataframe.dropna()
     return dataframe
 
 
-# This function removes first 15 min of data from all files (since it is gathered for initial positioning)
-# Unnecessary function
-def filter_time_range(dataframe):
-    start_time = dataframe['time'].min() + pd.Timedelta(minutes=15)
-    end_time = dataframe['time'].max() - pd.Timedelta(seconds=15)
-    return dataframe[(dataframe['time'] >= start_time) & (dataframe['time'] <= end_time)]
+def get_output_file_path(device, date, location):
+    # Get the current file location
+    current_script_path = os.path.realpath(__file__)
+    # Get the base directory
+    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
 
+    output_directory = os.path.join(base_directory, "output", f"{date}")
 
-# Needs redoing
-def main(date="21_04"):
+    output_filename = f"{device}_{date}_{location}_analysis.csv"
+
+    os.makedirs(output_directory, exist_ok=True)
+    output_file_path = os.path.join(output_directory, output_filename)
+
+    return output_file_path
+
+def main(date="22_04", systematic_error="0.137", epsilon="0.2", device="Xiaomi", location="Staadion"):
     raw_rover, processed_rover, ground_truth = read_data_files(date)
-
-    # This removes first 15 min. If use smaller circles then comment out
-    # raw_rover = filter_time_range(raw_rover)
-    # processed_rover = filter_time_range(processed_rover)
-    # ground_truth = filter_time_range(ground_truth)
 
     converted_processed = replace_WGS84_with_LEST97(processed_rover)
     converted_raw = replace_WGS84_with_LEST97(raw_rover)
     converted_ground_truth = replace_WGS84_with_LEST97(ground_truth)
 
-    ground_truth_with_euclidean = add_ground_truth_euclidean(converted_ground_truth)
-
-    # print(ground_truth_with_euclidean)
+    ground_truth_with_euclidean = add_ground_truth_euclidean(converted_ground_truth, epsilon)
 
     processed_merged, raw_merged = merge_dataframes(converted_raw, converted_processed, ground_truth_with_euclidean)
 
-    aftermath_processed = remove_systematic_error_from_dataframe(processed_merged)
-    aftermath_raw = remove_systematic_error_from_dataframe(raw_merged)
+    processed_without_systematic_error = remove_systematic_error_from_dataframe(processed_merged, systematic_error)
+    raw_without_systematic_error = remove_systematic_error_from_dataframe(raw_merged, systematic_error)
 
     raw_distances = []
     processed_distances = []
 
-    for index, row in aftermath_processed.iterrows():
+    for index, row in processed_without_systematic_error.iterrows():
         # Drawing related operations
         # min_x, min_y = find_min_lest97_coordinates(processed_merged)
         # processed_deviation = draw_coordinates_and_their_connection(row, 'go-', 'bo', 'ro', 0, min_x, min_y)
@@ -260,9 +243,9 @@ def main(date="21_04"):
         processed_deviation = calculate_deviation(0, row)
         processed_distances.append(processed_deviation)
 
-    aftermath_processed['deviation'] = processed_distances
+    processed_without_systematic_error['deviation'] = processed_distances
 
-    for index, row in aftermath_raw.iterrows():
+    for index, row in raw_without_systematic_error.iterrows():
         # Drawing related operations
         # min_x, min_y = find_min_lest97_coordinates(raw_merged)
         # raw_deviation = draw_coordinates_and_their_connection(row, 'ro-', 'bo', 'go',0, min_x, min_y)
@@ -270,32 +253,23 @@ def main(date="21_04"):
         raw_deviation = calculate_deviation(0, row)
         raw_distances.append(raw_deviation)
 
-    aftermath_raw['deviation'] = raw_distances
+    raw_without_systematic_error['deviation'] = raw_distances
 
-    aftermath_raw.to_csv("raw_aftermath.csv")
-    aftermath_processed.to_csv("proc_aftermath.csv")
-
-    # ToDo should be implemented in better manner
-    aftermath_processed_w_satellites = aftermath_processed.merge(aftermath_raw[['time', 'num_of_galileo_E1_freq_satellites',
+    processed_w_satellites = processed_without_systematic_error.merge(raw_without_systematic_error[['time', 'num_of_galileo_E1_freq_satellites',
                                                           'num_of_galileo_E5_freq_satellites',
                                                           'num_of_GPS_L1_freq_satellites',
                                                           'num_of_GPS_L5_freq_satellites',
                                                           'Cn0DbHz_epoch_average',
                                                           'pseudorange_rate_meters_per_second_epoch_average']], on='time',how='left')
-    aftermath_processed_w_satellites.to_csv("aftermath_processed_w_satellites.csv")
 
+
+    processed_w_satellites.to_csv(get_output_file_path(device, date, location))
 
     raw_mean_deviation = np.mean(raw_distances)
     processed_mean_deviation = np.mean(processed_distances)
 
-    print(raw_mean_deviation, " Toorandmete ja referentsandmete keskmine viga")
-    print(processed_mean_deviation, " Järeltöötlus andmete ja referentsandmete keskmine viga")
-
-    raw_standard_uncertainty = calculate_standard_uncertainty(raw_distances)
-    processed_standard_uncertainty = calculate_standard_uncertainty(processed_distances)
-
-    print(raw_standard_uncertainty, " Toorandmete ja referentsandmete standardmääramatus")
-    print(processed_standard_uncertainty, " Järeltöötlus andmete ja referentsandmete standardmääramatus")
+    raw_standard_uncertainty = calculate_standard_deviation(raw_distances)
+    processed_standard_uncertainty = calculate_standard_deviation(processed_distances)
 
     subtraction_of_raw_and_processed_mean_deviation = raw_mean_deviation - processed_mean_deviation
     subtraction_of_raw_and_processed_standard_uncertainty = raw_standard_uncertainty - processed_standard_uncertainty
@@ -308,7 +282,6 @@ def main(date="21_04"):
     # plt.show()
 
     return raw_mean_deviation, processed_mean_deviation, raw_standard_uncertainty, processed_standard_uncertainty, subtraction_of_raw_and_processed_mean_deviation, subtraction_of_raw_and_processed_standard_uncertainty
-
 
 if __name__ == "__main__":
     main()
