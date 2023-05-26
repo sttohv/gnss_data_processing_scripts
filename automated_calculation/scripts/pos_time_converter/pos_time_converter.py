@@ -4,7 +4,8 @@ import datetime
 from pathlib import Path
 
 
-def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="13_05"):
+
+def convert_GPST_to_time(location="Staadion", device="Pixel", date="13_05"):
     filepaths = get_files(date, device, location)
 
     output_file_path = filepaths[0]
