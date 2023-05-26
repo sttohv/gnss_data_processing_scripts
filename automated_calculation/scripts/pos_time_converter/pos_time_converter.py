@@ -1,30 +1,14 @@
 import csv
 import os
 import datetime
+from pathlib import Path
 
 
-# calculating determines if whole function (True) or just this file (False)
-# NOTE both False and True work for calculating
-def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="22_04", calculating=True):
-    output_filename = f"{device}_pos_{date}_{location}.csv"
-    input_filename = f"{device}_{date}_{location}_pos"
+def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="13_05"):
+    filepaths = get_files(date, device, location)
 
-    # Get the current file location
-    current_script_path = os.path.realpath(__file__)
-
-    # Get the base directory
-    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
-
-    # Individual procedure
-    if calculating:
-        output_directory = os.path.join(base_directory, "intermediate_results", f"{date}")
-        # os.makedirs(os.path.dirname(f"{output_directory}/{output_filename}"), exist_ok=True)
-    else:
-        output_directory = os.path.join(base_directory, 'scripts', 'pos_time_converter', "output", f"{date}")
-        # os.makedirs(os.path.dirname(f"{output_directory}/{output_filename}"), exist_ok=True)
-
-    os.makedirs(output_directory, exist_ok=True)
-    output_file_path = os.path.join(output_directory, output_filename)
+    output_file_path = filepaths[0]
+    input_file_path = filepaths[1]
 
     with open(output_file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -32,28 +16,22 @@ def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="22_04", c
         header = ["time", "latitude", "longitude"]
         writer.writerow(header)
 
-        if calculating:
-            input_directory = os.path.join(base_directory, 'input')
-        else:
-            input_directory = os.path.join(base_directory, 'scripts', 'pos_time_converter', 'input', f"{date}")
-
-        input_file_path = os.path.join(input_directory, f'{input_filename}.pos')
-
         stream = open(input_file_path, 'r')
         for line in stream:
             if line[0].isdigit():
-                lineList = line.split("   ")
-                gpsTime = lineList[0]
-                time = get_time_from_GPST(gpsTime)
-                latitude = lineList[1]
-                longitude = lineList[2].split()[0]
+                line_list = line.split("   ")
+                gps_time = line_list[0]
+                time = get_time_from_GPST(gps_time)
+                latitude = line_list[1]
+                longitude = line_list[2].split()[0]
                 row = [time, latitude, longitude]
                 writer.writerow(row)
 
+
 def get_time_from_GPST(gpst: str) -> str:
-    splitedGPST = gpst.split(" ")
-    weeks = int(splitedGPST[0])
-    seconds = int(splitedGPST[1][:-4])
+    splited_GPST = gpst.split(" ")
+    weeks = int(splited_GPST[0])
+    seconds = int(splited_GPST[1][:-4])
     # Constants from the formula
     minus_seconds = 18
 
@@ -61,6 +39,30 @@ def get_time_from_GPST(gpst: str) -> str:
     new_date = datetime.datetime(1980, 1, 6) + datetime.timedelta(weeks=weeks, seconds=(seconds - minus_seconds))
     formatted_result = new_date.strftime("%H:%M:%S")
     return formatted_result
+
+
+def get_files(date, device, location):
+    # Get the current file location
+    current_script_path = os.path.realpath(__file__)
+    # Get the base directory
+    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
+
+    # Set input and output directories
+    input_directory = os.path.join(base_directory, "input", date)
+    output_directory = os.path.join(base_directory, "output", f"{date}")
+
+    input_path = Path(input_directory)
+    input_file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".pos"]
+
+    input_filename = input_file_names[0]
+    output_filename = f"{device}_pos_{date}_{location}.csv"
+
+    os.makedirs(output_directory, exist_ok=True)
+
+    output_file_path = os.path.join(output_directory, output_filename)
+    input_file_path = os.path.join(input_directory, input_filename)
+    return output_file_path, input_file_path
+
 
 if __name__ == "__main__":
     convert_GPST_to_time()

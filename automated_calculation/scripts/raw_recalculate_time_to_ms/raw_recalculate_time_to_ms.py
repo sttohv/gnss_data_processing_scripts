@@ -10,7 +10,6 @@ def gpst_to_utc(gps_time_nanos):
     return str(utc_time_millis)
 
 
-
 def raw_recalculate_time_to_ms(location="Staadion", device="Pixel", date="21_04", calculating=False):
     output_filename = f"{device}_{date}_{location}.txt"
 
