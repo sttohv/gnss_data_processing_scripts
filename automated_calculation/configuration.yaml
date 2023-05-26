@@ -1,0 +1,19 @@
+# Variables that determine the names of your output files
+location: Staadion
+date: 22_04
+device: Pixel
+constellations: GPS
+
+# Decide which conversions do you need for calculation
+ubx_conversion: True
+raw_data_conversion: True
+pos_conversion: True
+
+# CSV seperator for your input files (output will also have same)
+seperator: ,
+
+# Distance between ground truth receiver and the device
+systematic_error: 0.137
+
+# Providers for raw data conversion (NLP or FLP can be used as well)
+provider: [GPS, NLP, FLP]
