@@ -3,7 +3,6 @@ import os
 import datetime
 
 
-# Constants (choose one that fits for you or make your own)
 # calculating determines if whole function (True) or just this file (False)
 # NOTE both False and True work for calculating
 def convert_GPST_to_time(location="Tudengimaja", device="Pixel", date="22_04", calculating=True):

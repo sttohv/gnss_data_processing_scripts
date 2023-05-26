@@ -86,7 +86,7 @@ if __name__ == "__main__":
     if success_counter == 3:
         raw_mean_deviation, processed_mean_deviation, raw_standard_deviation, processed_standard_deviation, subtraction_of_raw_and_processed_mean_deviation, difference_of_raw_and_processed_standard_deviation = main(
             DATE)
-        write_report_about_measurement(DATE, CONSTELLATIONS)
+        write_report_about_measurement(LOCATION, DATE, DEVICE, CONSTELLATIONS)
 
 # ToDo Below
 # Make sure every method makes output folder. main.py should make an input folder (or write in README that one should be made manually). or user can upload files
