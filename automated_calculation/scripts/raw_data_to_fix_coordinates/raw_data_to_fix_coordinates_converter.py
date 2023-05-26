@@ -2,6 +2,7 @@ import csv
 import datetime
 import os
 import statistics
+from pathlib import Path
 
 FIX_DATA_TYPE = "Fix"
 RAW_DATA_TYPE = "Raw"
@@ -11,6 +12,7 @@ SINGLE_FREQUENCY_BANDWIDTH = "1575420030"
 DUAL_FREQUENCY_BANDWIDTH = "1176450050"
 GALILEO_CONSTELLATION_TYPE = "6"
 GPS_CONSTELLATION_TYPE = "1"
+
 
 def convert_unix_time_millis_to_time(unix_time_millis: int):
     unix_time_seconds = unix_time_millis / 1000
@@ -23,27 +25,16 @@ def convert_unix_time_millis_to_time(unix_time_millis: int):
 
     return formatted_time
 
+
 # Constants (choose one that fits for you or make your own)
 # calculating determines if whole function (True) or just this file (False)
 # NOTE both False and True work for calculating
 # ToDo provider here doesnt mean constellation but rather fix type (GPS, NLP, FLP). Login in main.py should be changed
-def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", date="22_04", provider="GPS", calculating=False):
-    output_filename = f"{device}_{FIX_DATA_TYPE}_{provider}_{date}_{location}.csv"
-    input_filename = f"{device}_{date}_{location}"
+def convert_raw_data_to_fix_coordinates(location="Staadion", device="Pixel", date="13_05", provider="GPS"):
+    filepaths = get_files(date, device, location, provider)
 
-    # Get the current file location
-    current_script_path = os.path.realpath(__file__)
-
-    # Get the base directory
-    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
-
-    if calculating:
-        output_directory = os.path.join(base_directory, "output", f"{date}")
-    else:
-        output_directory = os.path.join(base_directory, 'scripts', 'raw_data_to_fix_coordinates', "intermediate_results", f"{date}")
-
-    os.makedirs(output_directory, exist_ok=True)
-    output_file_path = os.path.join(output_directory, output_filename)
+    output_file_path = filepaths[0]
+    input_file_path = filepaths[1]
 
     with open(output_file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -59,14 +50,6 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
                   "pseudorange_rate_meters_per_second_epoch_average"
                   ]
         writer.writerow(header)
-
-        # Change file name if needed
-        if calculating:
-            input_directory = os.path.join(base_directory, 'input')
-        else:
-            input_directory = os.path.join(base_directory, 'scripts', 'raw_data_to_fix_coordinates', 'input', f"{date}")
-
-        input_file_path = os.path.join(input_directory, f'{input_filename}.txt')
 
         stream = open(input_file_path, 'r')
 
@@ -93,7 +76,7 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
                 line_provider = line_list[1]
 
                 if line_provider == provider:
-                    if current_fix_time == current_raw_time: # and sum(galileo_single_freq_satellite_counter,galileo_dual_freq_satellite_counter, GPS_single_freq_satellite_counter,GPS_dual_freq_satellite_counter)
+                    if current_fix_time == current_raw_time:
                         fix_row = [fix_converted_time,
                                    fix_latitude,
                                    fix_longitude,
@@ -105,13 +88,6 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
                                    statistics.fmean(pseudorange_rate_meters_per_second_counter)
                                    ]
                         writer.writerow(fix_row)
-
-                        # # Reset counters until next Fix is found
-                        # galileo_single_freq_satellite_counter = 0
-                        # GPS_single_freq_satellite_counter = 0
-                        # galileo_dual_freq_satellite_counter = 0
-                        # GPS_dual_freq_satellite_counter = 0
-
                     # Start of a new epoch
                     current_fix_time = line_list[8][:-3]
                     fix_latitude = line_list[2]
@@ -150,16 +126,25 @@ def convert_raw_data_to_fix_coordinates(location="Tudengimaja", device="Pixel", 
 
                 previous_raw_time = line_list[1][:-3]
 
-# Pythoni indeksid
-# Frequency = 22
-# ConstellationType = 28
-# SVID = 11
-# Cn0DbHz = 16
-# PseudorangeRateMetersPerSecond = 17
+def get_files(date, device, location, provider):
+    # Get the current file location
+    current_script_path = os.path.realpath(__file__)
+    # Get the base directory
+    base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
 
+    # Set input and output directories
+    input_directory = os.path.join(base_directory, "input", date)
+    output_directory = os.path.join(base_directory, "output", f"{date}")
 
-# time,rover_latitude,rover_longitude,ground_truth_latitude,ground_truth_longitude,distance_from_last_coord,deviation, galileo_L1_total, galileo_L5_total, GPS_L1_total, GPS_L5_total
+    input_path = Path(input_directory)
+    input_file_names = [file.name for file in input_path.iterdir() if file.is_file() and file.suffix == ".txt"]
+    input_filename = input_file_names[0]
+    output_filename = f"{device}_{FIX_DATA_TYPE}_{provider}_{date}_{location}.csv"
 
+    os.makedirs(output_directory, exist_ok=True)
+    output_file_path = os.path.join(output_directory, output_filename)
+    input_file_path = os.path.join(input_directory, input_filename)
+    return output_file_path, input_file_path
 
 if __name__ == "__main__":
     convert_raw_data_to_fix_coordinates()

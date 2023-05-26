@@ -27,7 +27,7 @@ def read_data_files(date, input_directory=None):
         base_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_script_path)))
 
         # Set the default input folder
-        input_directory = os.path.join(base_directory, "output", date)
+        input_directory = os.path.join(base_directory, "intermediate_results", date)
 
     input_path = Path(input_directory)
 
