@@ -20,6 +20,8 @@ git branch -M main
 git push -uf origin main
 ```
 
+**xd**
+
 ## Integrate with your tools
 
 - [ ] [Set up project integrations](https://gitlab.cs.ttu.ee/gnss_sentimeeter/gnss_data_processing_scripts/-/settings/integrations)
