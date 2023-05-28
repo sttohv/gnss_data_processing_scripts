@@ -1,13 +1,30 @@
-# How to use application
+# GNSS data processing scripts
 
-## Input files
-- Android gnss data (.txt)
-- u-blox receiver data (.ubx)
-- post processed Android gnss data from RTKPOST (.pos)
+GNSS data processing scripts are a collection of Python scripts for analyzing Android GNSS data.
+
+## Requirements
+
+To use the program, you must have at least Python 3.9, installed coordinates.converter, and numpy.
+
+## Input folder
+Make an input folder, that includes Android GNSS raw data log (.txt), post-processed Android GNSS data from RTKPOST (.pos), and reference data from u-blox (.ubx) by date (dd_mm).
+
+```bash
+gnss_data_processing_scripts
+|--automated_calculation
+    |--input
+        |--dd_mm
+           |--raw_data_001.txt
+           |--processed_data_001.ubx
+           |--reference_data_001.pos
+        |--dd_mm
+           |--raw_data_002.txt
+           |--processed_data_002.ubx
+           |--reference_data_002.pos
+```
+NB! If you don't provide all 3 files then script won't calculate results. It will still convert all of the provided files into csv.  format.
 
 ## Output files
-
-The file conversions from native format to csv are needed in order to calculate results
 
 Ground_truth_{date}_{location}.csv
 File contains 
@@ -36,6 +53,7 @@ This file is a combination of processed android GNSS data and ground truth infor
 Results_{constellations}_{device}_{date}_{location}.csv
 In this file you can see the calculation results (standard deviation and mean error between rover and ground truth)
 
-NB! If you don't provide all 3 files then script won't calculate results. It will still convert all of the provided files into csv. 
+## Contributing
 
-format.
+Pull requests are welcome. For major changes, please open an issue first
+to discuss what you would like to change.
