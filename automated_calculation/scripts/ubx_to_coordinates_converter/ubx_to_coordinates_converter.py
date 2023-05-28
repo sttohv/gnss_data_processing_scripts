@@ -4,7 +4,7 @@ from pyubx2 import UBXReader, UBXMessage
 from pynmeagps import NMEAMessage
 from pathlib import Path
 
-file_type = "Referentsandmed"
+file_type = "Ground_truth"
 
 
 def convert_ubx_to_csv(location="Staadion", date="13_05"):

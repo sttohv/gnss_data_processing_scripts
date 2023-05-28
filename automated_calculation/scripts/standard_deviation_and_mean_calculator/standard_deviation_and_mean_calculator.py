@@ -24,7 +24,7 @@ def read_data_files(date):
 
     raw_rover_data_file = [file_name for file_name in file_names if "Fix" in file_name][0]
     processed_rover_data_file = [file_name for file_name in file_names if "pos" in file_name][0]
-    ground_truth_data_file = [file_name for file_name in file_names if "Referentsandmed" in file_name][0]
+    ground_truth_data_file = [file_name for file_name in file_names if "Ground_truth" in file_name][0]
 
     raw_rover_file = input_path / raw_rover_data_file
     processed_rover_file = input_path / processed_rover_data_file

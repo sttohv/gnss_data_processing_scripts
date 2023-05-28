@@ -81,7 +81,7 @@ def write_report_about_measurement(location, date, device, constellations):
         row_6 = ["Raw and processed data standard deviation difference", difference_of_raw_and_processed_standard_deviation]
         writer.writerow(row_6)
 
-    print(f"results can be seen in output/{date}")
+    print(f"results can be found in output/{date}")
 
 if __name__ == "__main__":
     LOCATION, DATE, DEVICE, UBX_CONVERSION, RAW_DATA_CONVERSION, POS_CONVERSION, SYSTEMATIC_ERROR, PROVIDER, CONSTELLATIONS, EPSILON = read_configuration()
