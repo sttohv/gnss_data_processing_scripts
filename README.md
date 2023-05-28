@@ -6,8 +6,12 @@ GNSS data processing scripts are a collection of Python scripts for analyzing An
 
 To use the program, you must have at least Python 3.9, installed coordinates.converter, and numpy.
 
+## Configuration
+
+Change values in configuration.yaml file to match your needs. main.py uses those values.
+
 ## Input folder
-Make an input folder, that includes Android GNSS raw data log (.txt), post-processed Android GNSS data from RTKPOST (.pos), and reference data from u-blox (.ubx) by date (dd_mm).
+Make an input folder and nest a date folder (matching the one in configuration.yaml), that includes Android GNSS raw data log (.txt), post-processed Android GNSS data from RTKPOST (.pos), and reference data from u-blox (.ubx) by date (dd_mm).
 
 ```bash
 gnss_data_processing_scripts
